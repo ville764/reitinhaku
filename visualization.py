@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 from astar import AStar, octile_distance, get_neighbors
+from jps import JPS, octile_distance   
+
 
 
 # tässä funktiossa visualisoidaan A* algoritmin toimintaa
@@ -59,4 +61,38 @@ def visualize_astar(grid, start, goal):
 
 
     ani = animation.FuncAnimation(fig, update, frames=len(closed_set), repeat=False)
+    plt.show()
+
+# Visualisoi Jump Point Search (JPS) algoritmin toimintaa
+def visualize_jps(grid, start, goal):
+    rows, cols = grid.shape
+    jps = JPS(grid, heuristic=octile_distance)
+    path, closed_set = jps.find_path(start, goal)
+
+    fig, ax = plt.subplots()
+    ax.set_xticks(np.arange(-0.5, grid.shape[1], 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, grid.shape[0], 1), minor=True)
+    ax.grid(which='minor', color='black', linestyle='-', linewidth=0.5)
+    ax.imshow(grid, cmap='gray_r')
+
+    def update(frame):
+        ax.clear()
+        ax.set_xticks(np.arange(-0.5, grid.shape[1], 1), minor=True)
+        ax.set_yticks(np.arange(-0.5, grid.shape[0], 1), minor=True)
+        ax.grid(which='minor', color='black', linestyle='-', linewidth=0.5)
+        ax.imshow(grid, cmap='gray_r')
+
+        # Piirrä käsitellyt jump pointit
+        for node in list(closed_set)[:frame]:
+            ax.plot(node[1], node[0], 'bo')  # sininen piste
+
+        # Viimeisessä ruudussa piirrä myös reitti
+        if frame == len(closed_set) and path:
+            ax.plot([node[1] for node in path], [node[0] for node in path], 'r-', linewidth=2)
+
+        # Piirrä alku- ja loppupisteet
+        ax.plot(start[1], start[0], 'go')  # vihreä: alku
+        ax.plot(goal[1], goal[0], 'rx')    # punainen: maali
+
+    ani = animation.FuncAnimation(fig, update, frames=len(closed_set) + 1, repeat=False)
     plt.show()

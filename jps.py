@@ -1,10 +1,10 @@
 import heapq
 import math
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import numpy as np
 
-# lasketan Octile etäisyys kahden solmun välillä. Octile etäisyys on käytössä, kun voidaan liikkua kahdeksaan suuntaan (ylös, alas, vasemmalle, oikealle ja diagonaalisesti).
+# JPS (Jump Point Search) algoritmi 
+
+# lasketan Octile etäisyys kahden solmun välillä. Octile etäisyys on käytössä, 
+# kun voidaan liikkua kahdeksaan suuntaan (ylös, alas, vasemmalle, oikealle ja diagonaalisesti).
 def octile_distance(a, b):
     dx = abs(a[0] - b[0])
     dy = abs(a[1] - b[1])
@@ -120,6 +120,7 @@ def jump(x, direction, start, goal, grid):
 
     return jump(n, direction, start, goal, grid)
 
+
 # Tunnistetaan seuraajat solmulle x, jotka ovat hyppypisteitä
 # suhteessa aloitus- ja maalisolmuun
 def identify_successors(x, start, goal, grid):
@@ -178,58 +179,3 @@ class JPS:
                     heapq.heappush(queue, (f_scores[neighbor], neighbor))
 
         return None, closed_set
-
-def visualize_jps(grid, start, goal):
-    rows, cols = grid.shape
-    jps = JPS(grid, heuristic=octile_distance)
-    path, closed_set = jps.find_path(start, goal)
-
-    fig, ax = plt.subplots()
-    ax.set_xticks(np.arange(-0.5, grid.shape[1], 1), minor=True)
-    ax.set_yticks(np.arange(-0.5, grid.shape[0], 1), minor=True)
-    ax.grid(which='minor', color='black', linestyle='-', linewidth=0.5)
-    ax.imshow(grid, cmap='gray_r')
-
-    def update(frame):
-        ax.clear()
-        ax.set_xticks(np.arange(-0.5, grid.shape[1], 1), minor=True)
-        ax.set_yticks(np.arange(-0.5, grid.shape[0], 1), minor=True)
-        ax.grid(which='minor', color='black', linestyle='-', linewidth=0.5)
-        ax.imshow(grid, cmap='gray_r')
-        for node in list(closed_set)[:frame]:
-            ax.plot(node[1], node[0], 'bo')
-        if path:
-            ax.plot([node[1] for node in path], [node[0] for node in path], 'r-')
-        ax.plot(start[1], start[0], 'go')
-        ax.plot(goal[1], goal[0], 'rx')
-
-    ani = animation.FuncAnimation(fig, update, frames=len(closed_set), repeat=False)
-    plt.show()
-
-def create_grid(size, obstacles):
-    grid = np.zeros(size)
-    for obstacle in obstacles:
-        grid[obstacle] = 1
-    return grid
-
-grid_size = (10, 10)
-obstacles = [(1, 1), (1, 2), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3), (8, 2), (8, 1)]
-start = (0, 0)
-goal = (9, 9)
-
-grid_data_10 = create_grid(grid_size, obstacles)
-visualize_jps(grid_data_10, start, goal)
-
-grid_size = (100, 100)
-obstacles = [
-    (1, 1), (1, 2), (1, 3), (2, 3), (3, 3), (4, 3), (5, 3), (6, 3), (7, 3), (8, 3), (8, 2), (8, 1),
-    (20, 20), (20, 21), (20, 22), (21, 22), (22, 22), (23, 22), (24, 22), (25, 22), (26, 22), (27, 22),
-    (50, 50), (51, 50), (52, 50), (53, 50), (54, 50), (55, 50), (56, 50), (57, 50), (58, 50), (59, 50),
-    (70, 70), (71, 71), (72, 72), (73, 73), (74, 74), (75, 75), (76, 76), (77, 77), (78, 78), (79, 79)
-]
-start = (0, 0)
-goal = (99, 99)
-
-grid_data_100 = create_grid(grid_size, obstacles)
-visualize_jps(grid_data_100, start, goal)
-
