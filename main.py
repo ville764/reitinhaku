@@ -45,7 +45,8 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
 
     # Aloitetaan ajan mittaus
     start_time = time.time()
-    path, _ = jps.find_path(start, goal)
+    path,closed_set,jump_points_added = jps.find_path(start, goal)
+
     end_time = time.time()
     elapsed_time = end_time - start_time
 
@@ -56,14 +57,14 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
         print(f"  Optimaalinen pituus: {optimal_length:.2f}")
         print(f"  JPS algoritmin laskema polun pituus: {path_length:.2f}")
         print(f"  Erotus: {abs(path_length - optimal_length):.2f}")
-        print(f"  Suoritusaika: {elapsed_time:.6f} sekuntia\n")
+        print(f"  Suoritusaika: {elapsed_time:.6f} sekuntia")
+        print(f"  Hyppypisteiden määrä: {jump_points_added}\n")
     else:
         print(f"Skenaario {i+1}: Ei reittiä löydetty {start} -> {goal}")
         print(f"  Suoritusaika: {elapsed_time:.6f} sekuntia\n")
 
 # Verrataan A*-algoritmin suorituskykyä optimaalisesti laskettuun polkuun
 
-import time
 
 print("Verrataan A*-algoritmin suorituskykyä optimaalisesti laskettuun polkuun, 10 ensimmäistä polkua:\n")
 
@@ -100,12 +101,12 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
 #tehdään yhteenveto JPS- ja A*-algoritmien suorituskyvystä
 summary = []
 
-for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
+for i, (start, goal, optimal_length) in enumerate(scenarios[:100]):
     # JPS
     jps = JPS(np_map, heuristic=octile_distance)
     start_time = time.time()
     jps_path, _ = jps.find_path(start, goal)
-    jps_time = time.time() - start_time
+    jps_time = time.time() - start_time    
     if jps_path:
         jps_length = sum(np.hypot(jps_path[i+1][0] - jps_path[i][0], jps_path[i+1][1] - jps_path[i][1]) for i in range(len(jps_path)-1))
         jps_error = abs(jps_length - optimal_length)

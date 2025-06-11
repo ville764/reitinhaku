@@ -150,6 +150,7 @@ class JPS:
     # goal: maalisolmu (rivi, sarake)
     # Palauttaa: reitin (lista solmuista) ja suljetun joukon (set solmuista)
     def find_path(self, start, goal):
+        jump_points_added = 0 # testataan hyppypisteiden määrää
         rows, cols = len(self.grid), len(self.grid[0])
         g_scores = {start: 0}
         f_scores = {start: self.heuristic(start, goal)}
@@ -168,7 +169,7 @@ class JPS:
                     path.append(current)
                     current = came_from[current]
                 path.append(start)
-                return path[::-1], closed_set
+                return path[::-1], closed_set, jump_points_added  # Palautetaan reitti käänteisessä järjestyksessä, suljettu joukko ja hyppypisteiden määrä
             
             for neighbor in identify_successors(current, start, goal, self.grid):
                 tentative_g_score = g_scores[current] + octile_distance(current, neighbor)
@@ -177,5 +178,7 @@ class JPS:
                     g_scores[neighbor] = tentative_g_score
                     f_scores[neighbor] = tentative_g_score + self.heuristic(neighbor, goal)
                     heapq.heappush(queue, (f_scores[neighbor], neighbor))
+                    jump_points_added += 1
 
-        return None, closed_set
+
+        return None, closed_set # Palautetaan None, jos reittiä ei löydy, ja suljettu joukko
