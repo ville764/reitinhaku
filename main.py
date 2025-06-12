@@ -69,19 +69,10 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
 print("Verrataan A*-algoritmin suorituskykyä optimaalisesti laskettuun polkuun, 10 ensimmäistä polkua:\n")
 
 for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
-    rows, cols = np_map.shape
-    nodes = [(i, j) for i in range(rows) for j in range(cols) if np_map[i, j] == 0]
-    astar = AStar(nodes, heuristic=octile_distance)
+    astar = AStar(np_map, heuristic=octile_distance)
 
-    for node in nodes:
-        for neighbor in astar_get_neighbors(node, rows, cols):
-            if np_map[neighbor] == 0:
-                weight = 1.4 if abs(node[0] - neighbor[0]) == 1 and abs(node[1] - neighbor[1]) == 1 else 1
-                astar.add_edge(node, neighbor, weight)
-
-    # Aloitetaan ajan mittaus
     start_time = time.time()
-    path, _ = astar.find_path(start, goal)
+    path, closed_set, nodes_added = astar.find_path(start, goal)
     end_time = time.time()
     elapsed_time = end_time - start_time
 
@@ -92,20 +83,20 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
         print(f"  Optimaalinen pituus: {optimal_length:.2f}")
         print(f"  A* algoritmin laskema polun pituus: {path_length:.2f}")
         print(f"  Erotus: {abs(path_length - optimal_length):.2f}")
-        print(f"  Suoritusaika: {elapsed_time:.6f} sekuntia\n")
+        print(f"  Suoritusaika: {elapsed_time:.6f} sekuntia")
+        print(f"  Solmuja lisätty avoimeen joukkoon: {nodes_added}\n")
     else:
         print(f"Skenaario {i+1}: Ei reittiä löydetty {start} -> {goal}")
         print(f"  Suoritusaika: {elapsed_time:.6f} sekuntia\n")
 
 
-#tehdään yhteenveto JPS- ja A*-algoritmien suorituskyvystä
 summary = []
 
 for i, (start, goal, optimal_length) in enumerate(scenarios[:100]):
     # JPS
     jps = JPS(np_map, heuristic=octile_distance)
     start_time = time.time()
-    jps_path, _ = jps.find_path(start, goal)
+    jps_path, _, jump_points = jps.find_path(start, goal)
     jps_time = time.time() - start_time    
     if jps_path:
         jps_length = sum(np.hypot(jps_path[i+1][0] - jps_path[i][0], jps_path[i+1][1] - jps_path[i][1]) for i in range(len(jps_path)-1))
@@ -113,18 +104,12 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:100]):
     else:
         jps_length = None
         jps_error = None
+        jump_points = 0
 
-    # A*
-    rows, cols = np_map.shape
-    nodes = [(i, j) for i in range(rows) for j in range(cols) if np_map[i, j] == 0]
-    astar = AStar(nodes, heuristic=octile_distance)
-    for node in nodes:
-        for neighbor in astar_get_neighbors(node, rows, cols):
-            if np_map[neighbor] == 0:
-                weight = 1.4 if abs(node[0] - neighbor[0]) == 1 and abs(node[1] - neighbor[1]) == 1 else 1
-                astar.add_edge(node, neighbor, weight)
+    # A* (ruudukkopohjainen)
+    astar = AStar(np_map, heuristic=octile_distance)
     start_time = time.time()
-    astar_path, _ = astar.find_path(start, goal)
+    astar_path, _, nodes_added = astar.find_path(start, goal)
     astar_time = time.time() - start_time
     if astar_path:
         astar_length = sum(np.hypot(astar_path[i+1][0] - astar_path[i][0], astar_path[i+1][1] - astar_path[i][1]) for i in range(len(astar_path)-1))
@@ -132,6 +117,7 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:100]):
     else:
         astar_length = None
         astar_error = None
+        nodes_added = 0
 
     summary.append({
         "Skenaario": i + 1,
@@ -141,15 +127,22 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:100]):
         "JPS pituus": round(jps_length, 2) if jps_length else None,
         "JPS virhe": round(jps_error, 2) if jps_error else None,
         "JPS aika": round(jps_time, 4),
+        "JPS hyppypisteet": jump_points,
         "A* pituus": round(astar_length, 2) if astar_length else None,
         "A* virhe": round(astar_error, 2) if astar_error else None,
-        "A* aika": round(astar_time, 4)
+        "A* aika": round(astar_time, 4),
+        "A* open set": nodes_added
     })
 
 # Yhteenvedon tulostus
-print(f"{'Skenaario':<9}{'Alku':<15}{'Loppu':<15}{'Optimaalinen':<10}{'JPS pituus':<10}{'JPS virhe':<10}{'JPS aika':<10}{'A* pituus':<10}{'A* virhe':<10}{'A* aika':<10}")
+print(f"{'Skenaario':<9}{'Alku':<15}{'Loppu':<15}{'Optimaalinen':<13}"
+      f"{'JPS pituus':<12}{'JPS virhe':<12}{'JPS aika':<10}{'JPS hypyt':<12}"
+      f"{'A* pituus':<12}{'A* virhe':<12}{'A* aika':<10}{'A* open set':<14}")
+
 for row in summary:
-    print(f"{row['Skenaario']:<9}{str(row['Alku']):<15}{str(row['Loppu']):<15}{row['Optimaalinen']:<10}{str(row['JPS pituus']):<10}{str(row['JPS virhe']):<10}{row['JPS aika']:<10}{str(row['A* pituus']):<10}{str(row['A* virhe']):<10}{row['A* aika']:<10}")
+    print(f"{row['Skenaario']:<9}{str(row['Alku']):<15}{str(row['Loppu']):<15}{row['Optimaalinen']:<13}"
+          f"{str(row['JPS pituus']):<12}{str(row['JPS virhe']):<12}{row['JPS aika']:<10}{row['JPS hyppypisteet']:<12}"
+          f"{str(row['A* pituus']):<12}{str(row['A* virhe']):<12}{row['A* aika']:<10}{row['A* open set']:<14}")
 
 # Testien visualisointi
 scenarios = [row['Skenaario'] for row in summary]
