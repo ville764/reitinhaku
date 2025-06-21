@@ -22,22 +22,15 @@ scen_path = os.path.join(base_dir, 'maps', 'rmtst03.map.scen.txt')
 map_data = ml.load_map(map_path)
 np_map = ml.map_to_numpy(map_data)
 scenarios = ml.load_scenarios(scen_path)
-
-# Ladataan kartta ja skenaariot
-#map_path = '/Users/Ville/Documents/Opinnot/Algoritmit/reitinhaku/maps/rmtst03.map.txt'
-#scen_path = '/Users/Ville/Documents/Opinnot/Algoritmit/reitinhaku/maps/rmtst03.map.scen.txt'
-#map_data = ml.load_map(map_path)
-#np_map = ml.map_to_numpy(map_data)
-#scenarios = ml.load_scenarios(scen_path)
+print(f"Ladattu kartta {map_path} ja skenaariot {scen_path}.")
+print(f"Kartta koko: {np_map.shape[0]} riviä, {np_map.shape[1]} saraketta.")
+print(f"Ladattu {len(scenarios)} skenaariota.")
 
 #verrataan JPS-algoritmin suorituskykyä optimaalisesti laskettuun polkuun
 print("Verrataan JPS:n suorituskykyä optimaalisesti laskettuun polkuun, 10 ensimmäistä polkua:\n")
 # Käydään läpi ensimmäiset 10 skenaariota ja lasketaan JPS-polun pituus
 # sekä verrataan sitä optimaalisesti laskettuun polun pituuteen
 # Tulostetaan tulokset
-
-
-print("Verrataan JPS:n suorituskykyä optimaalisesti laskettuun polkuun, 10 ensimmäistä polkua:\n")
 
 for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
     jps = JPS(np_map, heuristic=octile_distance)
@@ -91,8 +84,9 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:10]):
 
 summary = []
 
-for i, (start, goal, optimal_length) in enumerate(scenarios[:100]):
+for i, (start, goal, optimal_length) in enumerate(scenarios[:]):
     # JPS
+
     jps = JPS(np_map, heuristic=octile_distance)
     start_time = time.time()
     jps_path, _, jump_points = jps.find_path(start, goal)
@@ -106,6 +100,7 @@ for i, (start, goal, optimal_length) in enumerate(scenarios[:100]):
         jump_points = 0
 
     # A* (ruudukkopohjainen)
+
     astar = AStar(np_map, heuristic=octile_distance)
     start_time = time.time()
     astar_path, _, nodes_added = astar.find_path(start, goal)
@@ -142,6 +137,16 @@ for row in summary:
     print(f"{row['Skenaario']:<9}{str(row['Alku']):<15}{str(row['Loppu']):<15}{row['Optimaalinen']:<13}"
           f"{str(row['JPS pituus']):<12}{str(row['JPS virhe']):<12}{row['JPS aika']:<10}{row['JPS hyppypisteet']:<12}"
           f"{str(row['A* pituus']):<12}{str(row['A* virhe']):<12}{row['A* aika']:<10}{row['A* open set']:<14}")
+
+# Lasketaan JPS:n ja A*:n keskimääräiset reitinhakuajat
+jps_ajat = [row["JPS aika"] for row in summary if "JPS aika" in row]
+astar_ajat = [row["A* aika"] for row in summary if "A* aika" in row]
+
+jps_keskiarvo = sum(jps_ajat) / len(jps_ajat) if jps_ajat else 0
+astar_keskiarvo = sum(astar_ajat) / len(astar_ajat) if astar_ajat else 0
+
+print(f"JPS:n keskimääräinen reitinhakuaika: {jps_keskiarvo:.6f} sekuntia")
+print(f"A*:n keskimääräinen reitinhakuaika: {astar_keskiarvo:.6f} sekuntia")
 
 
 # Testien visualisointi
