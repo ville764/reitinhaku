@@ -48,7 +48,7 @@ def get_neighbors(pos, grid, parent=None):
         direction = get_direction(parent, pos)
         dx, dy = direction
         
-        # Luonnolliset naapurit (jatka samaan suuntaan)
+        # Luonnolliset naapurit (jatketaan samaan suuntaan)
         if dx != 0 and dy != 0:
             # Diagonaalinen liike
             # Jatka diagonaalisesti
@@ -237,5 +237,5 @@ class JPS:
                         heapq.heappush(open_set, (f_score[successor], successor))
                         in_open_set.add(successor)
         
-        return None, closed_set, jump_points_explored # Palautetaan None, jos reittiä ei löydy, ja suljettu joukko
+        return None, closed_set, jump_points_explored # Palautetaan None, jos reittiä ei löydy, ja suljettu joukko sekä hyppypisteiden määrä
 
