@@ -5,134 +5,165 @@ import math
 
 # lasketan Octile etäisyys kahden solmun välillä. Octile etäisyys on käytössä, 
 # kun voidaan liikkua kahdeksaan suuntaan (ylös, alas, vasemmalle, oikealle ja diagonaalisesti).
+
 def octile_distance(a, b):
     dx = abs(a[0] - b[0])
     dy = abs(a[1] - b[1])
     return max(dx, dy) + (math.sqrt(2) - 1) * min(dx, dy)
 
+# tarkistetaan onko solmu vapaa (0) vai este (1)
+def is_valid(pos, grid):
+    x, y = pos
+    return (0 <= x < len(grid) and 
+            0 <= y < len(grid[0]) and 
+            grid[x][y] == 0)
+
+## palauttaa normalisoidun suunnan kahden pisteen välillä
+def get_direction(from_pos, to_pos):
+    dx = to_pos[0] - from_pos[0]
+    dy = to_pos[1] - from_pos[1]
+    
+    # Normalisoi suunta (-1, 0, 1)
+    if dx != 0:
+        dx = 1 if dx > 0 else -1
+    if dy != 0:
+        dy = 1 if dy > 0 else -1
+    
+    return (dx, dy)
+
 # luodaan tieto naapurisolmuista jokaiselle solmulle
-def get_neighbors(node, grid):
+def get_neighbors(pos, grid, parent=None):
+    x, y = pos
     neighbors = []
-    rows, cols = grid.shape
-    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
-        x, y = node[0] + dx, node[1] + dy
-        if 0 <= x < rows and 0 <= y < cols:
-            neighbors.append((x, y))
+    
+    if parent is None:
+        # Aloitussolmu - palauta kaikki kelvolliset naapurit
+        directions = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)]
+        for dx, dy in directions:
+            new_pos = (x + dx, y + dy)
+            if is_valid(new_pos, grid):
+                neighbors.append(new_pos)
+    else:
+        # Karsitut naapurit liikkumissuunnan perusteella
+        direction = get_direction(parent, pos)
+        dx, dy = direction
+        
+        # Luonnolliset naapurit (jatka samaan suuntaan)
+        if dx != 0 and dy != 0:
+            # Diagonaalinen liike
+            # Jatka diagonaalisesti
+            new_pos = (x + dx, y + dy)
+            if is_valid(new_pos, grid):
+                neighbors.append(new_pos)
+            
+            # Jatka horisontaalisesti ja vertikaalisesti
+            if is_valid((x + dx, y), grid):
+                neighbors.append((x + dx, y))
+            if is_valid((x, y + dy), grid):
+                neighbors.append((x, y + dy))
+        else:
+            # Ortogonaalinen liike
+            if dx != 0:
+                # Horisontaalinen liike
+                if is_valid((x + dx, y), grid):
+                    neighbors.append((x + dx, y))
+                if is_valid((x, y + 1), grid):
+                    neighbors.append((x, y + 1))
+                if is_valid((x, y - 1), grid):
+                    neighbors.append((x, y - 1))
+            else:
+                # Vertikaalinen liike
+                if is_valid((x, y + dy), grid):
+                    neighbors.append((x, y + dy))
+                if is_valid((x + 1, y), grid):
+                    neighbors.append((x + 1, y))
+                if is_valid((x - 1, y), grid):
+                    neighbors.append((x - 1, y))
+        
+        # Lisää pakotetut naapurit
+        forced = get_forced_neighbors(pos, direction, grid)
+        neighbors.extend(forced)
+    
     return neighbors
 
-# askel solmusta n suuntaan direction
-def step(x, direction):
-    return (x[0] + direction[0], x[1] + direction[1])
-
-# tarkistetaan onko solmu vapaa (0) vai este (1)
-def is_valid(n, grid):
-    rows, cols = len(grid), len(grid[0])
-    x, y = n
-    return 0 <= x < rows and 0 <= y < cols and grid[x][y] == 0  # 0 = vapaa, 1 = este
-
-# tarkistetaan onko naapuri pakotettu
-def is_forced(neigh, n, grid):
-    dx = neigh[0] - n[0]
-    dy = neigh[1] - n[1]
-
-    # Tarkastellaan vain naapureita, jotka ovat yhden askeleen päässä
-    if abs(dx) > 1 or abs(dy) > 1:
-        return False
-
-    # Ortogonaalinen liike
-    if dx == 0 or dy == 0:
-        # Esimerkiksi: liikutaan oikealle, tarkistetaan ylä- ja alapuoli
-        if dx == 1:  # alas
-            return (is_valid((n[0], n[1] - 1), grid) and not is_valid((n[0] + 1, n[1] - 1), grid)) or \
-                   (is_valid((n[0], n[1] + 1), grid) and not is_valid((n[0] + 1, n[1] + 1), grid))
-        if dx == -1:  # ylös
-            return (is_valid((n[0], n[1] - 1), grid) and not is_valid((n[0] - 1, n[1] - 1), grid)) or \
-                   (is_valid((n[0], n[1] + 1), grid) and not is_valid((n[0] - 1, n[1] + 1), grid))
-        if dy == 1:  # oikealle
-            return (is_valid((n[0] - 1, n[1]), grid) and not is_valid((n[0] - 1, n[1] + 1), grid)) or \
-                   (is_valid((n[0] + 1, n[1]), grid) and not is_valid((n[0] + 1, n[1] + 1), grid))
-        if dy == -1:  # vasemmalle
-            return (is_valid((n[0] - 1, n[1]), grid) and not is_valid((n[0] - 1, n[1] - 1), grid)) or \
-                   (is_valid((n[0] + 1, n[1]), grid) and not is_valid((n[0] + 1, n[1] - 1), grid))
-
-    # Diagonaalinen liike
-    if abs(dx) == 1 and abs(dy) == 1:
-        return (is_valid((n[0] - dx, n[1]), grid) and not is_valid((n[0] - dx, n[1] + dy), grid)) or \
-               (is_valid((n[0], n[1] - dy), grid) and not is_valid((n[0] + dx, n[1] - dy), grid))
-
-    return False
-
-
-# tarkistetaan onko suunta diagonaalinen
-def is_diagonal(direction):
-    return abs(direction[0]) == 1 and abs(direction[1]) == 1
-
-# haetaan diagonaalisen suunnan komponentit
-def get_diagonal_components(direction):
+# palauttaa pakotetut naapurit annetulle positiolle ja suunnalle
+def get_forced_neighbors(pos, direction, grid):
+    x, y = pos
     dx, dy = direction
-    return [(dx, 0), (0, dy)]
+    forced = []
+    
+    if dx != 0 and dy != 0:
+        # Diagonaalinen liike
+        # Tarkista vasen/oikea puoli
+        if not is_valid((x - dx, y), grid) and is_valid((x - dx, y + dy), grid):
+            forced.append((x - dx, y + dy))
+        if not is_valid((x, y - dy), grid) and is_valid((x + dx, y - dy), grid):
+            forced.append((x + dx, y - dy))
+    
+    elif dx != 0:
+        # Horisontaalinen liike
+        if not is_valid((x, y + 1), grid) and is_valid((x + dx, y + 1), grid):
+            forced.append((x + dx, y + 1))
+        if not is_valid((x, y - 1), grid) and is_valid((x + dx, y - 1), grid):
+            forced.append((x + dx, y - 1))
+    
+    elif dy != 0:
+        # Vertikaalinen liike
+        if not is_valid((x + 1, y), grid) and is_valid((x + 1, y + dy), grid):
+            forced.append((x + 1, y + dy))
+        if not is_valid((x - 1, y), grid) and is_valid((x - 1, y + dy), grid):
+            forced.append((x - 1, y + dy))
+    
+    return forced
 
-# karsitaan naapurit, jotka eivät ole linjassa vanhemman kanssa
-def prune(x, neighbors, parent=None):
-    if parent is None:
-        return neighbors  # Jos ei ole vanhempaa, palautetaan kaikki naapurit
-    # Lasketaan suunta vanhemmasta nykyiseen solmuun
-    px, py = parent
-    # Lasketaan suunta nykyisestä solmusta vanhempaan
-    dx = (x[0] - px) // max(abs(x[0] - px), 1)
-    dy = (x[1] - py) // max(abs(x[1] - py), 1)
-
-    # Karsitaan naapurit, jotka eivät ole linjassa nykyisen solmun kanssa
-    pruned = []
-    for n in neighbors:
-        ndx = n[0] - x[0]
-        ndy = n[1] - x[1]
-        if (dx == 0 or ndx == dx) and (dy == 0 or ndy == dy):
-            pruned.append(n)
-    return pruned
-
-# määritellään suunta nykyisestä solmusta naapuriin
-def direction(x, n):
-    dx = n[0] - x[0]
-    dy = n[1] - x[1]
-    return (dx // max(abs(dx), 1), dy // max(abs(dy), 1))
+# tarkistetaan onko solmulla pakotettuja naapureita annetussa suunnassa
+def has_forced_neighbors(pos, direction, grid):
+    return len(get_forced_neighbors(pos, direction, grid)) > 0
 
 # hyppääminen solmusta n suuntaan direction, kunnes saavutetaan maali tai este
-def jump(x, direction, start, goal, grid):
-    n = step(x, direction)
-
-    if not is_valid(n, grid):
-        return None
-
-    if n == goal:
-        return n
-    # Tarkistetaan, onko naapuri pakotettu
-    if any(is_forced(neigh, n, grid) for neigh in get_neighbors(n, grid)):
-        return n
-
-    # Jos suunta on diagonaalinen, tarkistetaan kaikki diagonaaliset komponentit
-    if is_diagonal(direction):
-        directions = get_diagonal_components(direction)
-        for d in directions:
-            if jump(n, d, start, goal, grid) is not None:
-                return n
-    # Jos suunta on ortogonaalinen, tarkistetaan vain se suunta
-
-    return jump(n, direction, start, goal, grid)
-
-
+def jump(start_pos, direction, goal, grid):
+    current = start_pos
+    dx, dy = direction
+    
+    while True:
+        # Siirry seuraavaan positioon
+        current = (current[0] + dx, current[1] + dy)
+        
+        # Tarkista onko positio kelvollinen
+        if not is_valid(current, grid):
+            return None
+        
+        # Tarkista onko maali
+        if current == goal:
+            return current
+        
+        # Tarkista onko pakotettuja naapureita
+        if has_forced_neighbors(current, direction, grid):
+            return current
+        
+        # Diagonaalinen liike: tarkista ortogonaalisia suuntia
+        if dx != 0 and dy != 0:
+            # Tarkista horisontaalinen suunta
+            if jump(current, (dx, 0), goal, grid) is not None:
+                return current
+            
+            # Tarkista vertikaalinen suunta
+            if jump(current, (0, dy), goal, grid) is not None:
+                return current
+            
 # Tunnistetaan seuraajat solmulle x, jotka ovat hyppypisteitä
 # suhteessa aloitus- ja maalisolmuun
-def identify_successors(x, start, goal, grid):
-    successors = set()
-    neighbors = prune(x, get_neighbors(x, grid))
-
-    for n in neighbors:
-        direction_to_n = direction(x, n)
-        jump_point = jump(x, direction_to_n, start, goal, grid)
+def identify_successors(pos, goal, grid, parent=None):
+    successors = []
+    neighbors = get_neighbors(pos, grid, parent)
+    
+    for neighbor in neighbors:
+        direction = get_direction(pos, neighbor)
+        jump_point = jump(pos, direction, goal, grid)
+        
         if jump_point is not None:
-            successors.add(jump_point)
-
+            successors.append(jump_point)
+    
     return successors
 
 # JPS (Jump Point Search) algoritmin luokka
@@ -140,7 +171,7 @@ class JPS:
     # Tämän luokan avulla voidaan etsiä reitti aloitussolmusta maalisolmuun
     # käyttäen JPS-algoritmia, joka on optimoitu reittien etsimiseen ruudukossa.
     # Tämän luokan avulla voidaan määritellä ruudukko ja heuristinen funktio, jota käytetään reitin etsimiseen.
-    def __init__(self, grid, heuristic):
+    def __init__(self, grid, heuristic=octile_distance):
         self.grid = grid
         self.heuristic = heuristic
 
@@ -148,37 +179,63 @@ class JPS:
     # Tämä metodi käyttää JPS-algoritmia reitin etsimiseen ja palauttaa löydetyn reitin sekä suljetun joukon.
     # start: aloitussolmu (rivi, sarake)
     # goal: maalisolmu (rivi, sarake)
-    # Palauttaa: reitin (lista solmuista) ja suljetun joukon (set solmuista)
+    # Palauttaa: reitin (lista solmuista) ja suljetun joukon (set solmuista) sekä hyppypisteiden määrän
     def find_path(self, start, goal):
-        jump_points_added = 0 # testataan hyppypisteiden määrää
-        rows, cols = len(self.grid), len(self.grid[0])
-        g_scores = {start: 0}
-        f_scores = {start: self.heuristic(start, goal)}
+        if not is_valid(start, self.grid) or not is_valid(goal, self.grid):
+            return None, set(), 0
+        
+        if start == goal:
+            return [start], set(), 0
+        
+        # Alustetaan tietorakenteet
+        open_set = []
+        heapq.heappush(open_set, (0, start))
         came_from = {}
+        g_score = {start: 0}
+        f_score = {start: self.heuristic(start, goal)}
         closed_set = set()
-        queue = []
-        heapq.heappush(queue, (f_scores[start], start))
-
-        while queue:
-            current = heapq.heappop(queue)[1]
+        jump_points_explored = 0
+        
+        # Pitää kirjaa siitä, mitkä solmut ovat open_set:ssä
+        in_open_set = {start}
+        
+        while open_set:
+            current = heapq.heappop(open_set)[1]
+            in_open_set.discard(current)
+            
+            if current in closed_set:
+                continue
+            
             closed_set.add(current)
-
+            
             if current == goal:
+                # Rakenna polku
                 path = []
                 while current in came_from:
                     path.append(current)
                     current = came_from[current]
                 path.append(start)
-                return path[::-1], closed_set, jump_points_added  # Palautetaan reitti käänteisessä järjestyksessä, suljettu joukko ja hyppypisteiden määrä
+                return path[::-1], closed_set, jump_points_explored
             
-            for neighbor in identify_successors(current, start, goal, self.grid):
-                tentative_g_score = g_scores[current] + octile_distance(current, neighbor)
-                if neighbor not in g_scores or tentative_g_score < g_scores[neighbor]:
-                    came_from[neighbor] = current
-                    g_scores[neighbor] = tentative_g_score
-                    f_scores[neighbor] = tentative_g_score + self.heuristic(neighbor, goal)
-                    heapq.heappush(queue, (f_scores[neighbor], neighbor))
-                    jump_points_added += 1
+            # Hae seuraajat
+            parent = came_from.get(current)
+            successors = identify_successors(current, goal, self.grid, parent)
+            jump_points_explored += len(successors)
+            
+            for successor in successors:
+                if successor in closed_set:
+                    continue
+                
+                tentative_g = g_score[current] + octile_distance(current, successor)
+                
+                if successor not in g_score or tentative_g < g_score[successor]:
+                    came_from[successor] = current
+                    g_score[successor] = tentative_g
+                    f_score[successor] = tentative_g + self.heuristic(successor, goal)
+                    
+                    if successor not in in_open_set:
+                        heapq.heappush(open_set, (f_score[successor], successor))
+                        in_open_set.add(successor)
+        
+        return None, closed_set, jump_points_explored # Palautetaan None, jos reittiä ei löydy, ja suljettu joukko
 
-
-        return None, closed_set # Palautetaan None, jos reittiä ei löydy, ja suljettu joukko

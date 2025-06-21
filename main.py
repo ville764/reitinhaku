@@ -3,9 +3,8 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import map_loader as ml
-from astar import AStar, octile_distance, get_neighbors as astar_get_neighbors
-from visualization import visualize_astar
-from visualization import visualize_jps
+from astar import AStar, octile_distance, get_neighbors as astar_get_neighbors 
+from visualization import visualize_selected_scenarios
 from jps import JPS, octile_distance
 import numpy as np
 import os
@@ -144,6 +143,7 @@ for row in summary:
           f"{str(row['JPS pituus']):<12}{str(row['JPS virhe']):<12}{row['JPS aika']:<10}{row['JPS hyppypisteet']:<12}"
           f"{str(row['A* pituus']):<12}{str(row['A* virhe']):<12}{row['A* aika']:<10}{row['A* open set']:<14}")
 
+
 # Testien visualisointi
 scenarios = [row['Skenaario'] for row in summary]
 jps_times = [row['JPS aika'] for row in summary]
@@ -177,14 +177,5 @@ plt.xlabel('Skenaario')
 plt.tight_layout()
 plt.show()
 
-# Visualisoidaan kaikki skenaariot eli reitit JPS- ja A*-algoritmeilla
-for row in summary:
-    start = row['Alku']
-    goal = row['Loppu']
-    optimal_length = row['Optimaalinen']
-    print(f"Visualisoidaan skenaario {row['Skenaario']}: Alkupiste {start}, Loppupiste {goal}, Optimaalinen pituus {optimal_length:.2f}")
-    print("JPS algoritmin visualisointi:")
-    visualize_jps(np_map, start, goal)
-    print("A* algoritmin visualisointi:")
-    visualize_astar(np_map, start, goal)
-
+# Visualisoidaan halutut skenaariot eli reitit JPS- ja A*-algoritmeilla
+visualize_selected_scenarios(summary, np_map)
