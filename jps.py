@@ -1,25 +1,55 @@
 import heapq
 import math
 
-# JPS (Jump Point Search) algoritmi 
+# JPS (Jump Point Search) algoritmi
 
-# lasketan Octile etäisyys kahden solmun välillä. Octile etäisyys on käytössä, 
-# kun voidaan liikkua kahdeksaan suuntaan (ylös, alas, vasemmalle, oikealle ja diagonaalisesti).
 
 def octile_distance(a, b):
+    """
+    Laskee Octile etäisyyden kahden pisteen välillä.
+    
+    Octile etäisyys on heuristiikka, jota käytetään kun voidaan liikkua 
+    kahdeksaan suuntaan (4 ortogonaalista + 4 diagonaalista).
+    
+    Args:
+        a (tuple): Ensimmäinen piste (x, y)
+        b (tuple): Toinen piste (x, y)
+    
+    Returns:
+        float: Octile etäisyys pisteiden välillä
+    """
     dx = abs(a[0] - b[0])
     dy = abs(a[1] - b[1])
     return max(dx, dy) + (math.sqrt(2) - 1) * min(dx, dy)
 
-# tarkistetaan onko solmu vapaa (0) vai este (1)
+
 def is_valid(pos, grid):
+    """
+    Tarkistaa onko annettu positio kelvollinen ruudukossa.
+    
+    Args:
+        pos (tuple): Tarkistettava positio (x, y)
+        grid (list): 2D lista joka esittää ruudukkoa (0 = vapaa, 1 = este)
+    
+    Returns:
+        bool: True jos positio on kelvollinen ja vapaa, False muuten
+    """
     x, y = pos
     return (0 <= x < len(grid) and 
             0 <= y < len(grid[0]) and 
             grid[x][y] == 0)
 
-## palauttaa normalisoidun suunnan kahden pisteen välillä
 def get_direction(from_pos, to_pos):
+    """
+    Palauttaa normalisoidun suuntavektorin kahden pisteen välillä.
+    
+    Args:
+        from_pos (tuple): Lähtöpiste (x, y)
+        to_pos (tuple): Kohdepiste (x, y)
+    
+    Returns:
+        tuple: Normalisoitu suuntavektori (dx, dy) arvoilla -1, 0 tai 1
+    """
     dx = to_pos[0] - from_pos[0]
     dy = to_pos[1] - from_pos[1]
     
@@ -31,8 +61,21 @@ def get_direction(from_pos, to_pos):
     
     return (dx, dy)
 
-# luodaan tieto naapurisolmuista jokaiselle solmulle
 def get_neighbors(pos, grid, parent=None):
+    """
+    Palauttaa naapurisolmut annetulle positiolle JPS-algoritmin mukaisesti.
+    
+    Jos vanhempi on None (aloitussolmu), palauttaa kaikki kelvolliset naapurit.
+    Muuten palauttaa vain karsitut naapurit liikkumissuunnan perusteella.
+    
+    Args:
+        pos (tuple): Nykyinen positio (x, y)
+        grid (list): 2D ruudukko
+        parent (tuple, optional): Vanhemman positio (x, y)
+    
+    Returns:
+        list: Lista naapurisolmuista
+    """
     x, y = pos
     neighbors = []
     
@@ -86,8 +129,21 @@ def get_neighbors(pos, grid, parent=None):
     
     return neighbors
 
-# palauttaa pakotetut naapurit annetulle positiolle ja suunnalle
 def get_forced_neighbors(pos, direction, grid):
+    """
+    Palauttaa pakotetut naapurit annetulle positiolle ja suunnalle.
+    
+    Pakotetut naapurit ovat solmuja, jotka on tutkittava koska este 
+    pakottaa reitin kulkemaan kyseisen solmun kautta.
+    
+    Args:
+        pos (tuple): Nykyinen positio (x, y)
+        direction (tuple): Liikkumissuunta (dx, dy)
+        grid (list): 2D ruudukko
+    
+    Returns:
+        list: Lista pakotetuista naapureista
+    """
     x, y = pos
     dx, dy = direction
     forced = []
@@ -116,12 +172,38 @@ def get_forced_neighbors(pos, direction, grid):
     
     return forced
 
-# tarkistetaan onko solmulla pakotettuja naapureita annetussa suunnassa
 def has_forced_neighbors(pos, direction, grid):
+    """
+    Tarkistaa onko annetulla positiolla pakotettuja naapureita tietyssä suunnassa.
+    
+    Args:
+        pos (tuple): Tarkistettava positio (x, y)
+        direction (tuple): Liikkumissuunta (dx, dy)
+        grid (list): 2D ruudukko
+    
+    Returns:
+        bool: True jos pakotettuja naapureita löytyy, False muuten
+    """
     return len(get_forced_neighbors(pos, direction, grid)) > 0
 
-# hyppääminen solmusta n suuntaan direction, kunnes saavutetaan maali tai este
 def jump(start_pos, direction, goal, grid):
+    """
+    Suorittaa hyppäämisen annettuun suuntaan kunnes löytyy hyppypiste, maali tai este.
+    
+    Hyppypiste on solmu jossa on:
+    - Pakotettuja naapureita
+    - Maalisolmu
+    - Diagonaalisessa liikkeessa: ortogonaalinen hyppypiste
+    
+    Args:
+        start_pos (tuple): Aloituspositio (x, y)
+        direction (tuple): Hyppäämissuunta (dx, dy)
+        goal (tuple): Maalisolmu (x, y)
+        grid (list): 2D ruudukko
+    
+    Returns:
+        tuple or None: Hyppypisteen koordinaatit tai None jos hyppypistettä ei löydy
+    """
     current = start_pos
     dx, dy = direction
     
@@ -151,9 +233,22 @@ def jump(start_pos, direction, goal, grid):
             if jump(current, (0, dy), goal, grid) is not None:
                 return current
             
-# Tunnistetaan seuraajat solmulle x, jotka ovat hyppypisteitä
-# suhteessa aloitus- ja maalisolmuun
 def identify_successors(pos, goal, grid, parent=None):
+    """
+    Tunnistaa ja palauttaa kaikki hyppypiste-seuraajat annetulle positiolle.
+    
+    Käy läpi kaikki naapurit ja suorittaa hyppäämisen jokaiseen suuntaan
+    löytääkseen hyppypisteet.
+    
+    Args:
+        pos (tuple): Nykyinen positio (x, y)
+        goal (tuple): Maalisolmu (x, y)
+        grid (list): 2D ruudukko
+        parent (tuple, optional): Vanhemman positio polunhakua varten
+    
+    Returns:
+        list: Lista hyppypiste-seuraajista
+    """
     successors = []
     neighbors = get_neighbors(pos, grid, parent)
     
@@ -166,21 +261,45 @@ def identify_successors(pos, goal, grid, parent=None):
     
     return successors
 
-# JPS (Jump Point Search) algoritmin luokka
 class JPS:
-    # Tämän luokan avulla voidaan etsiä reitti aloitussolmusta maalisolmuun
-    # käyttäen JPS-algoritmia, joka on optimoitu reittien etsimiseen ruudukossa.
-    # Tämän luokan avulla voidaan määritellä ruudukko ja heuristinen funktio, jota käytetään reitin etsimiseen.
+    """
+    Jump Point Search (JPS) algoritmin toteutus.
+    
+    JPS on optimoitu versio A* algoritmista ruudukkopohjaiseen polunhakuun.
+    Se vähentää tutkittavien solmujen määrää tunnistamalla "hyppypisteet"
+    ja hyppäämällä suoraan niihin välitutkimatta kaikkia solmuja.
+    
+    Attributes:
+        grid (list): 2D ruudukko jossa 0 = vapaa, 1 = este
+        heuristic (function): Heuristiikkafunktio etäisyyden arvioimiseen
+    """
+ 
     def __init__(self, grid, heuristic=octile_distance):
+        """
+        Alustaa JPS-algoritmin.
+        
+        Args:
+            grid (list): 2D lista joka esittää ruudukkoa (0 = vapaa, 1 = este)
+            heuristic (function, optional): Heuristiikkafunktio. Oletuksena octile_distance.
+        """
         self.grid = grid
         self.heuristic = heuristic
 
-    # JPS-algoritmin find_path-metodi etsii reitin aloitussolmusta maalisolmuun
-    # Tämä metodi käyttää JPS-algoritmia reitin etsimiseen ja palauttaa löydetyn reitin sekä suljetun joukon.
-    # start: aloitussolmu (rivi, sarake)
-    # goal: maalisolmu (rivi, sarake)
-    # Palauttaa: reitin (lista solmuista) ja suljetun joukon (set solmuista) sekä hyppypisteiden määrän
     def find_path(self, start, goal):
+        """
+        Etsii lyhimmän reitin aloitussolmusta maalisolmuun JPS-algoritmia käyttäen.
+        
+        Args:
+            start (tuple): Aloitussolmu (x, y)
+            goal (tuple): Maalisolmu (x, y)
+        
+        Returns:
+            tuple: Sisältää kolme elementtiä:
+                - path (list or None): Lista solmuista jotka muodostavat reitin, 
+                  tai None jos reittiä ei löydy
+                - closed_set (set): Joukko tutkituista solmuista
+                - jump_points_explored (int): Tutkittujen hyppypisteiden määrä
+        """
         if not is_valid(start, self.grid) or not is_valid(goal, self.grid):
             return None, set(), 0
         
@@ -238,4 +357,3 @@ class JPS:
                         in_open_set.add(successor)
         
         return None, closed_set, jump_points_explored # Palautetaan None, jos reittiä ei löydy, ja suljettu joukko sekä hyppypisteiden määrä
-

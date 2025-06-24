@@ -1,15 +1,38 @@
-
 import heapq
 import math
 
-# lasketan Octile etäisyys kahden solmun välillä. Octile etäisyys on käytössä, kun voidaan liikkua kahdeksaan suuntaan (ylös, alas, vasemmalle, oikealle ja diagonaalisesti).
 def octile_distance(a, b):
+    """
+    Laskee Octile etäisyyden kahden pisteen välillä.
+    
+    Octile etäisyys on heuristiikka, jota käytetään kun voidaan liikkua 
+    kahdeksaan suuntaan (4 ortogonaalista + 4 diagonaalista).
+    
+    Args:
+        a (tuple): Ensimmäinen piste (x, y)
+        b (tuple): Toinen piste (x, y)
+    
+    Returns:
+        float: Octile etäisyys pisteiden välillä
+    """
     dx = abs(a[0] - b[0])
     dy = abs(a[1] - b[1])
     return max(dx, dy) + (math.sqrt(2) - 1) * min(dx, dy)
 
-# luodaan tieto naapurisolmuista jokaiselle solmulle
 def get_neighbors(node, grid):
+    """
+    Palauttaa kaikki kelvolliset naapurisolmut annetulle solmulle.
+    
+    Tarkistaa kaikki 8 suuntaa (4 ortogonaalista + 4 diagonaalista) ja
+    palauttaa ne solmut, jotka ovat ruudukon sisällä ja vapaita (arvo 0).
+    
+    Args:
+        node (tuple): Solmun koordinaatit (x, y)
+        grid (list): 2D lista joka esittää ruudukkoa (0 = vapaa, 1 = este)
+    
+    Returns:
+        list: Lista kelvollisista naapurisolmuista
+    """
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1),
                   (-1, -1), (-1, 1), (1, -1), (1, 1)]
     neighbors = []
@@ -20,16 +43,50 @@ def get_neighbors(node, grid):
             neighbors.append((x, y))
     return neighbors
 
-# A* algoritmin luokka ruudukolle
 class AStar:
+    """
+    A* algoritmin toteutus ruudukkopohjaiseen polunhakuun.
+    
+    A* on optimaalinen polunhakualgoritmi, joka käyttää heuristiikkaa
+    löytääkseen lyhimmän reitin kahden pisteen välillä tehokkaasti.
+    
+    Attributes:
+        grid (list): 2D ruudukko jossa 0 = vapaa, 1 = este
+        heuristic (function): Heuristiikkafunktio etäisyyden arvioimiseen
+        rows (int): Ruudukon rivien määrä
+        cols (int): Ruudukon sarakkeiden määrä
+    """
     def __init__(self, grid, heuristic=octile_distance):
+        """
+        Alustaa A* algoritmin.
+        
+        Args:
+            grid (list): 2D lista joka esittää ruudukkoa (0 = vapaa, 1 = este)
+            heuristic (function, optional): Heuristiikkafunktio. Oletuksena octile_distance.
+        """
         self.grid = grid
         self.heuristic = heuristic
         self.rows = len(grid)
         self.cols = len(grid[0])
 
-    # etsi reitti aloitussolmusta maalisolmuun
     def find_path(self, start, goal):
+        """
+        Etsii lyhimmän reitin aloitussolmusta maalisolmuun A* algoritmia käyttäen.
+        
+        Algoritmi käyttää f-arvoa (f = g + h), jossa g on todellinen etäisyys
+        aloitussolmusta ja h on heuristinen arvio etäisyydestä maalisolmuun.
+        
+        Args:
+            start (tuple): Aloitussolmu (x, y)
+            goal (tuple): Maalisolmu (x, y)
+        
+        Returns:
+            tuple: Sisältää kolme elementtiä:
+                - path (list or None): Lista solmuista jotka muodostavat reitin,
+                  tai None jos reittiä ei löydy
+                - closed_set (set): Joukko tutkituista solmuista
+                - nodes_added (int): Avoimeen joukkoon lisättyjen solmujen määrä
+        """
         g_scores = {start: 0}
 
         # lasketaan heuristinen etäisyys aloitussolmusta maalisolmuun

@@ -4,10 +4,24 @@ import numpy as np
 from astar import AStar, octile_distance
 from jps import JPS, octile_distance
 
-# tässä funktiossa visualisoidaan A* algoritmin toimintaa
-# ja reitin löytämistä ruudukossa
-# käytetään matplotlib-kirjastoa visualisointiin
 def visualize_astar(grid, start, goal, ax=None, title="A* Algoritmi"):
+    """
+    Visualisoi A* algoritmin toiminnan animaationa.
+    
+    Näyttää miten A* algoritmi tutkii solmuja vaihe vaiheelta
+    ja löytää reitin aloituspisteestä maalipisteeseen. Käsitellyt
+    solmut näytetään sinisinä pisteinä ja löydetty reitti punaisena viivana.
+    
+    Args:
+        grid (numpy.ndarray): 2D ruudukko jossa 0 = vapaa, 1 = este
+        start (tuple): Aloituspisteen koordinaatit (x, y)
+        goal (tuple): Maalipisteen koordinaatit (x, y)
+        ax (matplotlib.axes.Axes, optional): Käytettävä akselisto. Jos None, luodaan uusi.
+        title (str, optional): Kuvaajan otsikko. Oletuksena "A* Algoritmi".
+    
+    Returns:
+        matplotlib.animation.FuncAnimation: Animaatio-objekti
+    """
     # luodaan A* algoritmi uudella toteutuksella
     astar = AStar(grid, heuristic=octile_distance)
 
@@ -54,8 +68,24 @@ def visualize_astar(grid, start, goal, ax=None, title="A* Algoritmi"):
     
     return ani
 
-# Visualisoi Jump Point Search (JPS) algoritmin toimintaa
 def visualize_jps(grid, start, goal, ax=None, title="JPS Algoritmi"):
+    """
+    Visualisoi JPS algoritmin toiminnan animaationa.
+    
+    Näyttää miten JPS algoritmi hyppii hyppypisteestä toiseen
+    ja löytää reitin tehokkaasti. Käsitellyt hyppypisteet näytetään
+    sinisinä pisteinä ja löydetty reitti punaisena viivana.
+    
+    Args:
+        grid (numpy.ndarray): 2D ruudukko jossa 0 = vapaa, 1 = este
+        start (tuple): Aloituspisteen koordinaatit (x, y)
+        goal (tuple): Maalipisteen koordinaatit (x, y)
+        ax (matplotlib.axes.Axes, optional): Käytettävä akselisto. Jos None, luodaan uusi.
+        title (str, optional): Kuvaajan otsikko. Oletuksena "JPS Algoritmi".
+    
+    Returns:
+        matplotlib.animation.FuncAnimation: Animaatio-objekti
+    """
     rows, cols = grid.shape
     jps = JPS(grid, octile_distance)
     path, closed_set, jump_points_added = jps.find_path(start, goal)
@@ -94,13 +124,27 @@ def visualize_jps(grid, start, goal, ax=None, title="JPS Algoritmi"):
         
     return ani
 
-# Visualisoi molemmat algoritmit allekkain vertailua varten
 def visualize_comparison(grid, start, goal, scenario_name=""):
+    """
+    Visualisoi A* ja JPS algoritmit rinnakkain vertailua varten.
+    
+    Näyttää molemmat algoritmit samassa ikkunassa allekkain,
+    jotta niiden suorituskykyä ja toimintaa voi helposti verrata.
+    
+    Args:
+        grid (numpy.ndarray): 2D ruudukko jossa 0 = vapaa, 1 = este
+        start (tuple): Aloituspisteen koordinaatit (x, y)
+        goal (tuple): Maalipisteen koordinaatit (x, y)
+        scenario_name (str, optional): Skenaarion nimi otsikkoa varten
+    
+    Returns:
+        tuple: Kaksi animaatio-objektia (A* animaatio, JPS animaatio)
+    """
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 8))
     
     # Aseta pääotsikko
     if scenario_name:
-        fig.suptitle(f'Skenaario {scenario_name}: Algoritmien vertailu\nAlku: {start}, Maali: {goal}', 
+        fig.suptitle(f'Skenaario {scenario_name}: Algoritmien vertailu\nAlku: {start}, Maali: {goal} Vihreä piste = alku, Punainen rasti = maali', 
                     fontsize=14, fontweight='bold')
     
     # Visualisoi A* yläpuolelle
@@ -115,8 +159,18 @@ def visualize_comparison(grid, start, goal, scenario_name=""):
     
     return ani1, ani2
 
-# Funktio skenaarion valintaan ja visualisointiin
 def visualize_selected_scenarios(summary, np_map):
+    """
+    Interaktiivinen funktio skenaarioiden valintaan ja visualisointiin.
+    
+    Näyttää käyttäjälle listan saatavilla olevista skenaarioista ja
+    antaa mahdollisuuden valita yksittäisiä skenaarioita tai kaikki
+    visualisoitavaksi. Käyttäjä voi myös lopettaa ohjelman.
+    
+    Args:
+        summary (list): Lista skenaariotiedoista (dict-objekteja)
+        np_map (numpy.ndarray): Karttadata numpy-taulukkona
+    """
     print("\nKäytettävissä olevat skenaariot:")
     for i, row in enumerate(summary):
         print(f"{i+1}. Skenaario {row['Skenaario']}: Alku {row['Alku']}, Loppu {row['Loppu']}, "
