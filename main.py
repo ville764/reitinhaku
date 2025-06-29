@@ -15,7 +15,7 @@ from visualization import visualize_selected_scenarios
 from jps import JPS, octile_distance
 import numpy as np
 import os
-
+from astar_and_jps_route_test import run_benchmark
 
 def load_map_and_scenarios():
     """
@@ -122,7 +122,7 @@ def run_comprehensive_comparison(scenarios, np_map):
         np_map (numpy.ndarray): Karttadata numpy-taulukkona
         
     Returns:
-        list: Lista yhteenvetodictejä jokaisesta suoritetusta skenaarista
+        list: Lista yhteenvetosanakirjoja jokaisesta suoritetusta skenaariosta
     """
     summary = []
 
@@ -244,7 +244,15 @@ def visualize_results(summary):
 def main():
     """
     Pääfunktio, joka suorittaa koko reitinhakualgoritmien vertailun.
+
     """
+    #ajataan testti miten löytävätkö A* ja JPS algoritmit saman mittaiset reitit
+    run_benchmark(
+        show_visualizations=True,
+        show_comparison_charts=True, 
+        show_results_table=True,
+        show_jps_template=True)
+
     # Ladataan kartta ja skenaariot
     np_map, scenarios = load_map_and_scenarios()
     
